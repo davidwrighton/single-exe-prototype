@@ -9,11 +9,10 @@
   </Target>
 
   <PropertyGroup>
-    <ComputeLinkedFilesToPublishDependsOn Condition="'$(NativeCodeGen)' != 'readytorun'">LinkNative</ComputeLinkedFilesToPublishDependsOn>
-    <ComputeLinkedFilesToPublishDependsOn Condition="'$(NativeCodeGen)' == 'readytorun'">BuildAllReadyToRunAssemblies</ComputeLinkedFilesToPublishDependsOn>
+    <ComputeLinkedFilesToPublishDependsOn>BuildAllReadyToRunAssemblies</ComputeLinkedFilesToPublishDependsOn>
   </PropertyGroup>
 
-  <Import Project="Microsoft.NETCore.Native.ReadyToRun.targets" Condition="'$(NativeCodeGen)' == 'readytorun'" />
+  <Import Project="Microsoft.NETCore.Native.ReadyToRun.targets" />
   
   <!--
     This target hooks into the dotnet CLI publish pipeline. That pipeline has
@@ -42,8 +41,7 @@
     </ItemGroup>
     
     <ItemGroup>
-      <_NativeIntermediateAssembly Include="@(IntermediateAssembly->'$(NativeIntermediateOutputPath)%(Filename)%(Extension)')" Condition="'$(NativeCodeGen)' == 'readytorun'" />
-      <_NativeIntermediateAssembly Include="@(IntermediateAssembly->'$(NativeOutputPath)%(Filename)$(NativeBinaryExt)')" Condition="'$(NativeCodeGen)' != 'readytorun'" />
+      <_NativeIntermediateAssembly Include="@(IntermediateAssembly->'$(NativeIntermediateOutputPath)%(Filename)%(Extension)')" />
       <IntermediateAssembly Remove="@(IntermediateAssembly)" />
       <IntermediateAssembly Include="@(_NativeIntermediateAssembly)" />
     </ItemGroup>
@@ -55,7 +53,6 @@
     pipeline we don't want to see in the output (native images, CoreCLR artifacts)
     until we get a proper AOT NetCore app package.
   -->
-  <UsingTask TaskName="ComputeManagedAssembliesToCompileToNative" AssemblyFile="$(IlcBuildTasksPath)" />
   <Target Name="_ComputeAssembliesToCompileToNative" DependsOnTargets="$(IlcDynamicBuildPropertyDependencies)">
 
     <!-- Fail with descriptive error message for common mistake. -->
@@ -67,35 +64,17 @@
     <Error Condition="'$(DisableUnsupportedError)' != 'true' and '$(OS)' != 'Windows_NT' and $(RuntimeIdentifier.StartsWith('win'))" Text="Cross-compilation is not supported yet. https://github.com/dotnet/corert/issues/5458" />
     <Error Condition="'$(DisableUnsupportedError)' != 'true' and !$(RuntimeIdentifier.EndsWith('x64'))" Text="$(RuntimeIdentifier) not supported yet. https://github.com/dotnet/corert/issues/4589" />
 
-    <!-- CoreRT SDK and Framework Assemblies need to be defined to avoid CoreCLR implementations being set as compiler inputs -->  
-    <Error Condition="'@(PrivateSdkAssemblies)' == ''" Text="The PrivateSdkAssemblies ItemGroup is required for _ComputeAssembliesToCompileToNative" />
-    <Error Condition="'@(FrameworkAssemblies)' == ''" Text="The FrameworkAssemblies ItemGroup is required for _ComputeAssembliesToCompileToNative" />
-
-    <ComputeManagedAssembliesToCompileToNative Assemblies="@(ResolvedAssembliesToPublish);@(_ResolvedCopyLocalPublishAssets)"
-    DotNetAppHostExecutableName="$(_DotNetAppHostExecutableName)" DotNetHostFxrLibraryName="$(_DotNetHostFxrLibraryName)" DotNetHostPolicyLibraryName="$(_DotNetHostPolicyLibraryName)"
-    SdkAssemblies="@(PrivateSdkAssemblies)" FrameworkAssemblies="@(FrameworkAssemblies)" CompilationMode="$(NativeCodeGen)">
-      <Output TaskParameter="ManagedAssemblies" ItemName="_ManagedResolvedAssembliesToPublish" />
-      <Output TaskParameter="AssembliesToSkipPublish" ItemName="_AssembliesToSkipPublish" />
-    </ComputeManagedAssembliesToCompileToNative>
-    
     <ItemGroup>
-      <ReadyToRunAssemblies Condition="'$(NativeCodeGen)' == 'readytorun'" Include="@(_ManagedResolvedAssembliesToPublish);@(IntermediateAssembly)" />
-      <ReadyToRunAssembliesToReference Condition="'$(NativeCodeGen)' == 'readytorun'" Include="@(ReadyToRunAssemblies)" />
-      <ReadyToRunOutputAssembliesToPublish Include="@(_ManagedResolvedAssembliesToPublish->'$(NativeIntermediateOutputPath)%(Filename)%(Extension)')" Condition="'$(NativeCodeGen)' == 'readytorun'" />
+      <_ManagedResolvedAssembliesToPublish> Include="@(ResolvedAssembliesToPublish)" />
+      <_AssembliesToSkipPublish> Include="@(ResolvedAssembliesToPublish)" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ReadyToRunAssemblies Include="@(_ManagedResolvedAssembliesToPublish);@(IntermediateAssembly)" />
+      <ReadyToRunAssembliesToReference Include="@(ReadyToRunAssemblies)" />
+      <ReadyToRunOutputAssembliesToPublish Include="@(_ManagedResolvedAssembliesToPublish->'$(NativeIntermediateOutputPath)%(Filename)%(Extension)')" />
     </ItemGroup>
     
-  </Target>
-
-  <Target Name="CopyNativeBinary" Condition="'$(NativeCodeGen)' != 'readytorun'" AfterTargets="Publish">
-    <!-- override apphost with binary we generated during native compilation -->
-    <Delete Files="$(PublishDir)\$(TargetName)$(NativeBinaryExt)"/>
-    <Copy SourceFiles="$(NativeOutputPath)$(TargetName)$(NativeBinaryExt)" DestinationFolder="$(PublishDir)" />
-  </Target>
-
-  <Target Name="CopyNativePdb" Condition="'$(DebugType)' != 'None' and '$(TargetOS)' == 'Windows_NT' and '$(NativeLib)' != 'Static' and '$(NativeCodeGen)' != 'readytorun'" AfterTargets="Publish">
-    <!-- dotnet CLI produces managed debug symbols - substitute with those we generated during native compilation -->
-    <Delete Files="$(PublishDir)\$(TargetName).pdb"/>    
-    <Copy SourceFiles="$(NativeOutputPath)$(TargetName).pdb" DestinationFolder="$(PublishDir)" />  
   </Target>
 
 </Project>
