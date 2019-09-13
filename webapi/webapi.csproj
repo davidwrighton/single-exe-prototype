@@ -170,7 +170,8 @@
           AfterTargets="_PrepareForReadyToRunCompilation">
     <ItemGroup>
       <_CrossgenTool Remove="@(_CrossgenTool)" />
-      <_CrossgenTool Include="$(CoreClrBinariesDir)crossgen" />
+<!--      <_CrossgenTool Include="dotnet /home/davidwr/coreclr/bin/Product/Linux.x64.Debug/crossgen2/publish/crossgen2.dll" /> -->
+      <_CrossgenTool Include="$(CoreClrBinariesDir)\crossgen2\crossgen2" />
     </ItemGroup>
   </Target>
 
@@ -180,14 +181,15 @@
       <_ReadyToRunImplementationAssemblies Remove="@(_ReadyToRunImplementationAssemblies)" Condition=" '%(Extension)' != '.dll' " />
     </ItemGroup>
     <!-- Necessary when sending to perflab - the permissions are not preserved when zipping/unzipping. -->
-    <Exec Command="chmod +x @(_CrossgenTool)" />
+<!--    <Exec Command="chmod +x @(_CrossgenTool)" /> -->
     <PropertyGroup>
-      <CrossgenCommand>@(_CrossgenTool) /nologo /MissingDependenciesOK</CrossgenCommand>
+      <CrossgenCommand>@(_CrossgenTool)</CrossgenCommand>
+      <CrossgenCommand Condition="'$(ProduceTuningImage)'=='true'">$(CrossgenCommand) --tuning </CrossgenCommand>
       <!-- crossgen fails if System.Private.CoreLib isn't a fully-qualified path -->
-      <CrossgenCommand>$(CrossgenCommand) /r @(_ReadyToRunImplementationAssemblies->'%(FullPath)', ' /r ')</CrossgenCommand>
+      <CrossgenCommand>$(CrossgenCommand) -r:@(_ReadyToRunImplementationAssemblies->'%(FullPath)', ' -r:')</CrossgenCommand>
     </PropertyGroup>
     <ItemGroup>
-      <CrossgenCommands Include="$(CrossgenCommand) /out %(_ReadyToRunCompileList.OutputR2RImage) %(_ReadyToRunCompileList.Identity)" />
+      <CrossgenCommands Include="$(CrossgenCommand) -o:%(_ReadyToRunCompileList.OutputR2RImage) %(_ReadyToRunCompileList.Identity)" />
     </ItemGroup>
     <Exec Command="%(CrossgenCommands.Identity)" />
   </Target>
