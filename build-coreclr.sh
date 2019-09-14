@@ -4,6 +4,7 @@
 scriptroot="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 coreclrbuilddir="$scriptroot/../coreclr/bin/Product/Linux.x64.Release"
+#coreclrbuilddir="$scriptroot/../coreclr/bin/Product/Linux.x64.Debug"
 coreclrbinariesdir="$scriptroot/webapi/coreclrbin"
 
 # apt install cmake clang llvm libicu-dev liblttng-ust-dev libkrb5-dev

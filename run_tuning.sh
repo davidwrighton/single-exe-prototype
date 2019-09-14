@@ -2,6 +2,10 @@
 
 scriptroot="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+export ProduceTuningImage=true
+dotnet publish -c Release webapi/webapi.csproj -o published -p:UseStaticHost=true -p:UsePublishFilterList=true -p:PublishTrimmed=true -p:PublishReadyToRun=true
+export ProduceTuningImage=false
+
 rm -r -f $scriptroot/rawibcdata
 mkdir -p $scriptroot/rawibcdata
 
@@ -41,3 +45,5 @@ while kill -0 "$PROC_ID" >/dev/null 2>&1; do
 done
 
 echo "PROCESS TERMINATED"
+
+$scriptroot/produce_tibc.sh

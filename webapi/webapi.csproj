@@ -8,6 +8,7 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <SelfContained>true</SelfContained>
     <CoreClrBinariesDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)coreclrbin/'))</CoreClrBinariesDir>
+    <TibcDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)tibcdata/'))</TibcDir>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -179,17 +180,21 @@
     <!-- Work around non-assemblies in the input that are normally filtered out by the ReadyToRun task -->
     <ItemGroup>
       <_ReadyToRunImplementationAssemblies Remove="@(_ReadyToRunImplementationAssemblies)" Condition=" '%(Extension)' != '.dll' " />
+      <_TibcFiles Include="$(TibcDir)*.tibc" />
     </ItemGroup>
     <!-- Necessary when sending to perflab - the permissions are not preserved when zipping/unzipping. -->
 <!--    <Exec Command="chmod +x @(_CrossgenTool)" /> -->
     <PropertyGroup>
       <CrossgenCommand>@(_CrossgenTool)</CrossgenCommand>
       <CrossgenCommand Condition="'$(ProduceTuningImage)'=='true'">$(CrossgenCommand) --tuning </CrossgenCommand>
+      <CrossgenCommand Condition="'$(ProduceTuningImage)'!='true'">$(CrossgenCommand) --Ot </CrossgenCommand>
+      <CrossgenCommand Condition="'$(UseTibcData)'=='true'">$(CrossgenCommand) --inputbubble --partial -t:@(_TibcFiles->'%(FullPath)', ' -t:')</CrossgenCommand>
       <!-- crossgen fails if System.Private.CoreLib isn't a fully-qualified path -->
       <CrossgenCommand>$(CrossgenCommand) -r:@(_ReadyToRunImplementationAssemblies->'%(FullPath)', ' -r:')</CrossgenCommand>
     </PropertyGroup>
     <ItemGroup>
-      <CrossgenCommands Include="$(CrossgenCommand) -o:%(_ReadyToRunCompileList.OutputR2RImage) %(_ReadyToRunCompileList.Identity)" />
+      <CrossgenCommands Condition="'%(_ReadyToRunCompileList.Filename)' != 'webapi' Or '$(UseTibcData)'!='true'" Include="$(CrossgenCommand) -o:%(_ReadyToRunCompileList.OutputR2RImage) %(_ReadyToRunCompileList.Identity)" />
+      <CrossgenCommands Condition="'%(_ReadyToRunCompileList.Filename)' == 'webapi' And '$(UseTibcData)'=='true'" Include="$(CrossgenCommand) --compilebubblegenerics --nonlocalgenerics_fromprofiledata -o:%(_ReadyToRunCompileList.OutputR2RImage) %(_ReadyToRunCompileList.Identity)" />
     </ItemGroup>
     <Exec Command="%(CrossgenCommands.Identity)" />
   </Target>
