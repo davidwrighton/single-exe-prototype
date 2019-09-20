@@ -8,6 +8,6 @@ mkdir -p $scriptroot/webapi/tibcdata
 cp $scriptroot/tibcdata/* $scriptroot/webapi/tibcdata
 
 export UseTibcData=true
-dotnet publish -c Release webapi/webapi.csproj -o published -p:UseStaticHost=true -p:UsePublishFilterList=true -p:PublishTrimmed=true -p:PublishReadyToRun=true -v d $1
+dotnet publish -c Release webapi/webapi.csproj -o published -p:UseStaticHost=true -p:UsePublishFilterList=true -p:PublishTrimmed=true -p:PublishReadyToRun=true $1
 export UseTibcData=false
 

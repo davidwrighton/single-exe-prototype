@@ -12,6 +12,7 @@ mkdir -p $scriptroot/rawibcdata
 export COMPlus_ZapBBInstr=*
 export COMPlus_ZapBBInstrDir=$scriptroot/rawibcdata
 export COMPlus_ZapBBInstrR2RGenerics=2
+export COMPlus_JITMinOpts=1
 
 $scriptroot/published/webapi & PROC_ID=$!
 echo $PROC_ID

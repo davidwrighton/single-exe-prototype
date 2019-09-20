@@ -21,7 +21,7 @@ do
   if [ -f $ibcfile ]
   then
     tibc_command="$scriptroot/webapi/coreclrbin/tibcmgr/tibcmgr convert $referencescommandline $ibcfile $dll $tibcfile"
-    echo $tibc_command
+    echo $ibcfile
     $tibc_command
   fi
 done
