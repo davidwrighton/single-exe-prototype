@@ -184,7 +184,7 @@
     <!-- Necessary when sending to perflab - the permissions are not preserved when zipping/unzipping. -->
 <!--    <Exec Command="chmod +x @(_CrossgenTool)" /> -->
     <PropertyGroup>
-      <CrossgenCommand>@(_CrossgenTool) --doNotFailOnCodegenCompilationExceptions</CrossgenCommand>
+      <CrossgenCommand>@(_CrossgenTool) --resilient</CrossgenCommand>
       <CrossgenCommand Condition="'$(ProduceTuningImage)'=='true'">$(CrossgenCommand) --tuning </CrossgenCommand>
       <CrossgenCommand Condition="'$(ProduceTuningImage)'!='true'">$(CrossgenCommand) --Ot </CrossgenCommand>
       <CrossgenCommand Condition="'$(UseTibcData)'=='true'">$(CrossgenCommand) --inputbubble --partial -t:@(_TibcFiles->'%(FullPath)', ' -t:')</CrossgenCommand>
